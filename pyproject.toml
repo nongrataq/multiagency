@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "studyflow"
+version = "0.1.0"
+description = "Локальный мультиагентный учебный помощник"
+requires-python = ">=3.12"
+dependencies = ["langgraph>=1.0,<2", "langgraph-checkpoint-sqlite>=3,<4", "pydantic>=2.10,<3", "httpx>=0.28,<1", "streamlit>=1.42,<2", "prometheus-client>=0.21,<1", "opentelemetry-sdk>=1.30,<2", "opentelemetry-exporter-otlp-proto-http>=1.30,<2"]
+
+[project.optional-dependencies]
+test = ["pytest>=8,<10"]
+
+[tool.setuptools]
+packages = ["studyflow"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

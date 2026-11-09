@@ -1,0 +1,56 @@
+services:
+  ollama:
+    profiles: [local-models]
+    image: ollama/ollama:latest
+    ports: ["127.0.0.1:11434:11434"]
+    volumes: ["ollama-models:/root/.ollama"]
+  app:
+    build: .
+    ports: ["127.0.0.1:${APP_PORT:-8501}:8501"]
+    environment: &env
+      OLLAMA_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://phoenix:6006
+      DATA_DIR: /app/data
+      MODEL_SMALL: qwen3.5:0.8b
+      MODEL_WRITER: qwen3.5:2b
+      MODEL_VALIDATOR: gemma4:e2b
+      MODEL_ROUTER: d3:2b
+      MODEL_CONTEXT: "4096"
+      MODEL_THREADS: "6"
+      MODEL_KEEP_ALIVE: ${MODEL_KEEP_ALIVE:-5m}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-180}
+      METRICS_BIND: 0.0.0.0
+    volumes: ["study-data:/app/data"]
+    read_only: true
+    tmpfs: ["/tmp", "/home/student/.streamlit"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 2g
+  monitor:
+    build: .
+    command: ["python", "-m", "studyflow.monitor"]
+    restart: unless-stopped
+    environment: *env
+    volumes: ["study-data:/app/data"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    ports: ["127.0.0.1:6006:6006"]
+    environment:
+      PHOENIX_WORKING_DIR: /data
+      PHOENIX_ENABLE_AUTH: "false"
+    volumes: ["phoenix-data:/data"]
+  prometheus:
+    image: prom/prometheus:v3.2.1
+    ports: ["127.0.0.1:9090:9090"]
+    volumes: ["./infra/prometheus.yml:/etc/prometheus/prometheus.yml:ro", "./infra/alerts.yml:/etc/prometheus/alerts.yml:ro", "metrics-data:/prometheus"]
+    command: ["--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.retention.time=7d"]
+  alertmanager:
+    image: prom/alertmanager:v0.28.1
+    volumes: ["./infra/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro"]
+volumes:
+  ollama-models:
+  study-data:
+  phoenix-data:
+  metrics-data:

@@ -1,0 +1,36 @@
+vmType: vz
+cpus: 4
+memory: 6GiB
+disk: 20GiB
+images:
+  - location: https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-amd64.img
+    arch: x86_64
+  - location: https://cloud-images.ubuntu.com/releases/24.04/release/ubuntu-24.04-server-cloudimg-arm64.img
+    arch: aarch64
+mounts: []
+containerd:
+  system: false
+  user: false
+portForwards:
+  - guestPort: 8501
+    hostPort: 8501
+  - guestPort: 9100
+    hostPort: 9100
+provision:
+  - mode: system
+    script: |
+      #!/bin/sh
+      set -eu
+      [ ! -f /etc/studyflow-provisioned ] || exit 0
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install --no-install-recommends -y python3.12-venv iptables-persistent
+      iptables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      iptables -A OUTPUT -o lo -j ACCEPT
+      iptables -A OUTPUT -d 192.168.5.2 -p tcp --dport 11435 -j ACCEPT
+      iptables -A OUTPUT -j REJECT
+      ip6tables -A OUTPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+      ip6tables -A OUTPUT -o lo -j ACCEPT
+      ip6tables -A OUTPUT -j REJECT
+      netfilter-persistent save
+      touch /etc/studyflow-provisioned

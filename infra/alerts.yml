@@ -1,0 +1,21 @@
+groups:
+  - name: studyflow
+    rules:
+      - alert: OllamaUnavailable
+        expr: studyflow_ollama_available{job="ollama-health"} == 0
+        for: 30s
+        labels: {severity: warning}
+        annotations: {summary: 'Ollama недоступна'}
+      - alert: ExporterUnavailable
+        expr: up == 0
+        for: 1m
+        labels: {severity: warning}
+      - alert: ModelErrors
+        expr: sum(increase(studyflow_model_calls_total{outcome="error"}[5m])) > 0
+        labels: {severity: warning}
+      - alert: EvaluationRegression
+        expr: studyflow_eval_pass_ratio < 0.8
+        labels: {severity: warning}
+      - alert: EvaluationResultInvalid
+        expr: studyflow_eval_result_valid{job="ollama-health"} == 0
+        labels: {severity: warning}

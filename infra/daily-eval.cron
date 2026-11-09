@@ -1,0 +1,1 @@
+0 3 * * * cd /opt/studyflow && docker compose exec -T app python -m studyflow.evaluate >> data/eval-cron.log 2>&1

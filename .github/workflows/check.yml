@@ -1,0 +1,17 @@
+name: checks
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install -r requirements.lock && pip install --no-deps -e .
+      - run: pytest -q
+      - run: docker compose config --quiet
+      - run: docker build -t studyflow-ci .
+      - run: >-
+          docker run --rm --entrypoint python studyflow-ci -c
+          "from pathlib import Path; import studyflow.serve; assert Path('/app/evals/cases.jsonl').is_file(); assert Path('/app/examples/databases.md').is_file()"
